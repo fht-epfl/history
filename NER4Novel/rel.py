@@ -11,13 +11,14 @@ import networkx as nx
 import matplotlib.pyplot as plt
 from pyhanlp import *
 import chinese_converter
-from matplotlib import rcParams, font_manager
+# import matplotlib
+
+from matplotlib import font_manager
+print("SimHei" in [f.name for f in font_manager.fontManager.ttflist])  # should print True
+
+
 
 plt.rcParams["font.sans-serif"] = ["SimHei"]  # 用来正常显示中文标签
-plt.rcParams["axes.unicode_minus"] = False  # 用来正常显示负号
-
-# plt.rcParams["font.family"] = [myfont.get_name()]  # 用来正常显示中文标签
-# plt.rcParams["font.sans-serif"] = [myfont.get_name()]  # 用来正常显示中文标签
 plt.rcParams["axes.unicode_minus"] = False  # 用来正常显示负号
 
 class hanlp(object):
@@ -296,11 +297,7 @@ def plot_rel(relations, names, draw_all=True, balanced=True, verbose=True):
     #多种方式展示结果
     # nx.draw(sub_G, with_labels=True, node_size=sub_nums, width=sub_weight)
     # plt.show()
-    print('*'*50)
-    print(myfont.get_name())
-    nx.draw_spring(sub_G, with_labels=True, node_size=sub_nums, width=sub_weight, font_family=myfont)
-
-    # plt.show()
+    nx.draw_spring(sub_G, with_labels=True, node_size=sub_nums, width=sub_weight)
     plt.savefig("plots/"+args.book+".png", dpi=300)
     if draw_all==True:
         nx.draw_circular(sub_G, with_labels=True, node_size=sub_nums, width=sub_weight)
