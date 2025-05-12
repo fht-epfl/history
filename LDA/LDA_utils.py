@@ -40,7 +40,7 @@ def preprocess(text):
 
 
 # Define the path to your folder containing .txt files (each document is a novel)
-folder_path = './literature'  # Replace with your actual folder path
+folder_path = './literature_traditional'  # Replace with your actual folder path
 documents = []
 
 # Read and preprocess each document in the folder
@@ -54,7 +54,9 @@ for filename in os.listdir(folder_path):
 
 with open('./stopwords/stopwords_zh.txt', encoding='utf-8') as f:
     remove_words = [line.strip() for line in f if line.strip()]
-remove_words.append(["——", "個子","      我",'      你','      他','      她','        '])
+remove_words.extend(["——", "個子","      我",'      你','      他','      她','        ',])
 documents = [[token for token in doc if token not in remove_words] for doc in documents]
+
+# Save the preprocessed documents to a file for later use
 with open('documents.pkl', 'wb') as f:
     pickle.dump(documents, f)
