@@ -49,9 +49,10 @@ def generate_enhanced_colors():
 label_colors, big_label_colors, small_label_colors = generate_enhanced_colors()
 
 # Dropdown options - filter for 朱天心 books only
-book_options = [{'label': row['title'], 'value': row['title']} 
+book_options = [{'label': f"{row['title']} - {row['year']} - {row['author']}", 'value': row['title']} 
                for _, row in df_books.iterrows() 
-               if '朱天心' in row['author']]
+               if '朱天心' in row['author'] and row['year'] >= 1987]
+# print(f"Available books: {book_options}")
 
 # Enhanced Layout with better organization
 app.layout = html.Div([
@@ -181,7 +182,8 @@ def create_hierarchical_checklist(selected_book):
         return html.P("请先选择书籍", style={'color': '#7F8C8D', 'fontStyle': 'italic'})
     
     # Filter imagery data for the selected book
-    book_imagery = df_imagery[df_imagery['book'] == selected_book]
+    # book_imagery = df_imagery[df_imagery['book'] == selected_book]
+    book_imagery = df_imagery.copy()
     
     # Group by big_label and collect small_labels
     label_hierarchy = {}
@@ -325,13 +327,16 @@ def update_legend_and_highlight_text(selected_book, big_label_values, small_labe
         text = row['text']
 
         # Filter imagery data for the selected book first
-        book_imagery = df_imagery[df_imagery['book'] == selected_book]
+        # book_imagery = df_imagery[df_imagery['book'] == selected_book]
+        book_imagery = df_imagery.copy()
         
         # Filter by selected labels (both big and small)
         filtered = book_imagery[
             (book_imagery['big_label'].isin(selected_big_labels)) |
             (book_imagery['small_label'].isin(selected_small_labels))
         ]
+
+        filtered = filtered.drop_duplicates(subset=['word', 'big_label', 'small_label'])
 
         # Sort by word length (longest first) to avoid partial replacements
         filtered = filtered.sort_values(by='word', key=lambda x: x.str.len(), ascending=False)
@@ -340,68 +345,61 @@ def update_legend_and_highlight_text(selected_book, big_label_values, small_labe
         highlight_map = {}
         for _, r in filtered.iterrows():
             word = r['word']
-            # Use small_label color if the small_label is selected, otherwise use big_label color
-            if r['small_label'] in selected_small_labels:
-                color = small_label_colors[r['small_label']]
-                label_info = f"{r['small_label']} ({r['big_label']})"
-            else:
-                color = big_label_colors[r['big_label']]
-                label_info = r['big_label']
-            
+            color = small_label_colors.get(r['small_label'], big_label_colors.get(r['big_label'], "#DDDDDD"))
+            label_info = f"{r['small_label']} ({r['big_label']})" if r['small_label'] in selected_small_labels else r['big_label']
             if word not in highlight_map:
-                highlight_map[word] = f"<span style='background-color:{color}; padding:2px 4px; border-radius:3px; border:1px solid #BDC3C7;' title='{label_info}'>{word}</span>"
+                highlight_map[word] = (color, label_info)
 
-        def highlight_words(text, highlight_map):
-            for word, span in highlight_map.items():
-                # Simple direct replacement - works with Chinese text and all punctuation
-                # This will highlight the word wherever it appears in the text
-                text = text.replace(word, span)
-            return text
 
-        highlighted_text = highlight_words(text, highlight_map)
+        def create_highlighted_elements(text, highlight_map):
+            # Sort by length to avoid partial matches
+            sorted_words = sorted(highlight_map.keys(), key=len, reverse=True)
 
-        # Enhanced HTML styling
-        html_output = f"""
-        <html>
-        <head>
-            <meta charset="UTF-8">
-            <style>
-                body {{
-                    white-space: pre-wrap;
-                    font-family: 'Microsoft YaHei', SimSun, serif;
-                    line-height: 1.8;
-                    font-size: 16px;
-                    padding: 20px;
-                    color: #2C3E50;
-                    background-color: #FEFEFE;
-                    max-width: 100%;
-                    word-wrap: break-word;
-                }}
-                span {{
-                    transition: all 0.2s ease;
-                }}
-                span:hover {{
-                    transform: scale(1.05);
-                    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-                }}
-            </style>
-        </head>
-        <body>{highlighted_text}</body>
-        </html>
-        """
+            # Build pattern to match any of the highlight words
+            pattern = '|'.join(re.escape(word) for word in sorted_words)
+            parts = re.split(f'({pattern})', text)
 
-        text_display = html.Iframe(
-            srcDoc=html_output,
-            style={
-                'width': '100%', 
-                'height': '700px', 
-                'border': '1px solid #BDC3C7',
-                'borderRadius': '5px'
-            }
-        )
+            # Construct the final output using html.Span
+            elements = []
+            for part in parts:
+                if part in highlight_map:
+                    color, label_info = highlight_map[part]
+                    elements.append(html.Span(
+                        part,
+                        style={
+                            'backgroundColor': color,
+                            'padding': '2px 4px',
+                            'borderRadius': '3px',
+                            'border': '1px solid #BDC3C7',
+                            'cursor': 'pointer'
+                        },
+                        title=label_info
+                    ))
+                else:
+                    elements.append(part)
+            return elements
+
+
+        highlighted_text = create_highlighted_elements(text, highlight_map)
+        text_display = html.Div(highlighted_text, style={
+            'whiteSpace': 'pre-wrap',
+            'fontFamily': "'Microsoft YaHei', SimSun, serif",
+            'lineHeight': '1.8',
+            'fontSize': '16px',
+            'padding': '20px',
+            'color': '#2C3E50',
+            'backgroundColor': '#FEFEFE',
+            'maxWidth': '100%',
+            'wordWrap': 'break-word',
+            'height': '700px',
+            'overflowY': 'scroll',
+            'border': '1px solid #BDC3C7',
+            'borderRadius': '5px'
+        })
+
     
     return legend, text_display
 
 # Run app
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=True, port=8050)
