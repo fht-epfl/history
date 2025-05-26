@@ -55,7 +55,7 @@ class DynamicImageryAnalyzer:
         print(f"選中的小標籤: {selected_small_labels}")
         
         # 獲取該書的意象數據
-        book_imagery = self.df_ima[self.df_ima['word'].map(lambda x: len(x) > 1)].drop_duplicates(subset=['word', 'big_label', 'small_label'])
+        book_imagery = self.df_ima[self.df_ima['book'] == book_title]
         
         if book_imagery.empty:
             print(f"❌ 書籍 '{book_title}' 在意象數據中不存在")
@@ -213,61 +213,63 @@ class DynamicImageryAnalyzer:
 # 初始化動態分析器
 analyzer = DynamicImageryAnalyzer(df_imagery, df_books)
 
-# Enhanced color generation with high contrast colors
+# Enhanced color generation with scientific journal standards
 def generate_enhanced_colors():
-    """Generate high contrast colors (blue, orange, red, green, etc.) with light/dark variants"""
+    """Generate colors based on scientific journal standards - high contrast yet aesthetically pleasing"""
     
-    # 高對比度基礎色彩 - 經典配色
-    base_colors = [
-        "#2E86AB",  # 藍色
-        "#F24236",  # 紅色  
-        "#F18F01",  # 橘色
-        "#C73E1D",  # 深紅色
-        "#A23B72",  # 紫紅色
-        "#F3B700",  # 金黃色
-        "#03AC13",  # 綠色
-        "#592941",  # 深紫色
-        "#1B998B",  # 青綠色
-        "#84C7AE",  # 淺綠色
-        "#6C5B7B",  # 灰紫色
-        "#C06C84",  # 玫瑰色
-        "#355070",  # 深藍色
-        "#6D597A",  # 紫灰色
-        "#B56576",  # 暖粉色
-        "#E56B6F",  # 珊瑚紅
-        "#EAAC8B",  # 桃色
-        "#C8D5B9",  # 淺橄欖色
-        "#8FBC8F",  # 海綠色
-        "#20B2AA"   # 淺海色
+    # 科學期刊常用的高質量配色方案
+    # 基於Nature, Science, Cell等頂級期刊的圖表配色
+    scientific_colors = [
+        "#1f77b4",  # 深藍 - 經典科學藍
+        "#ff7f0e",  # 橙色 - 溫暖對比色
+        "#2ca02c",  # 綠色 - 自然綠
+        "#d62728",  # 紅色 - 警示紅
+        "#9467bd",  # 紫色 - 優雅紫
+        "#8c564b",  # 棕色 - 大地色
+        "#e377c2",  # 粉色 - 柔和粉
+        "#7f7f7f",  # 灰色 - 中性灰
+        "#bcbd22",  # 橄欖綠 - 自然色
+        "#17becf",  # 青藍 - 清新藍
+        "#aec7e8",  # 淺藍 - 柔和藍
+        "#ffbb78",  # 淺橙 - 暖橙
+        "#98df8a",  # 淺綠 - 春綠
+        "#ff9896",  # 淺紅 - 溫和紅
+        "#c5b0d5",  # 淺紫 - 薰衣草
+        "#c49c94",  # 淺棕 - 米棕
+        "#f7b6d3",  # 淺粉 - 櫻花粉
+        "#c7c7c7",  # 淺灰 - 銀灰
+        "#dbdb8d",  # 淺黃綠 - 檸檬綠
+        "#9edae5"   # 淺青 - 天藍
     ]
     
-    def lighten_color(hex_color, factor=0.85):
-        """將顏色變淺，factor越大越淺"""
-        hex_color = hex_color.lstrip('#')
-        
+    def create_scientific_light_color(base_color, alpha=0.15):
+        """創建科學期刊風格的高亮顏色"""
+        hex_color = base_color.lstrip('#')
         r = int(hex_color[0:2], 16)
         g = int(hex_color[2:4], 16)
         b = int(hex_color[4:6], 16)
         
-        # 增加亮度
-        r = int(r + (255 - r) * factor)
-        g = int(g + (255 - g) * factor)
-        b = int(b + (255 - b) * factor)
+        # 使用更精緻的混合算法，保持色相飽和度平衡
+        # 參考 Nature 期刊的高亮色彩處理
+        lightness_factor = 0.88  # 更高的亮度
+        r = int(r * (1 - lightness_factor) + 255 * lightness_factor)
+        g = int(g * (1 - lightness_factor) + 255 * lightness_factor)
+        b = int(b * (1 - lightness_factor) + 255 * lightness_factor)
         
         return f"#{r:02x}{g:02x}{b:02x}"
     
-    def darken_color(hex_color, factor=0.75):
-        """將顏色變深，factor越小越深"""
-        hex_color = hex_color.lstrip('#')
-        
+    def create_scientific_dark_color(base_color, factor=0.85):
+        """創建科學期刊風格的深色版本"""
+        hex_color = base_color.lstrip('#')
         r = int(hex_color[0:2], 16)
         g = int(hex_color[2:4], 16)
         b = int(hex_color[4:6], 16)
         
-        # 降低亮度
-        r = int(r * factor)
-        g = int(g * factor)
-        b = int(b * factor)
+        # 保持足夠的對比度和專業感
+        min_brightness = 45  # 適中的最低亮度
+        r = max(int(r * factor), min_brightness)
+        g = max(int(g * factor), min_brightness)
+        b = max(int(b * factor), min_brightness)
         
         return f"#{r:02x}{g:02x}{b:02x}"
     
@@ -275,31 +277,115 @@ def generate_enhanced_colors():
     small_labels = sorted(df_imagery['small_label'].unique())
     
     # 為大標籤創建顏色映射
-    big_label_colors_light = {}  # 用於文本高亮
-    big_label_colors_dark = {}   # 用於圖表
+    big_label_colors_light = {}
+    big_label_colors_dark = {}
     
     for i, label in enumerate(big_labels):
-        base_color = base_colors[i % len(base_colors)]
-        big_label_colors_light[label] = lighten_color(base_color, 0.85)  # 很淺
-        big_label_colors_dark[label] = darken_color(base_color, 0.8)     # 較深
+        base_color = scientific_colors[i % len(scientific_colors)]
+        big_label_colors_light[label] = create_scientific_light_color(base_color)
+        big_label_colors_dark[label] = create_scientific_dark_color(base_color, 0.9)
     
-    # 為小標籤創建顏色映射 - 使用不同的起始點避免重複
+    # 為小標籤創建顏色映射 - 使用不同起始點
     small_label_colors_light = {}
     small_label_colors_dark = {}
     
+    # 從第5個顏色開始，確保與大標籤有足夠區別
+    offset = max(5, len(big_labels) // 2)
+    
     for i, label in enumerate(small_labels):
-        # 從不同位置開始，避免與大標籤顏色重複
-        color_index = (i + len(big_labels)) % len(base_colors)
-        base_color = base_colors[color_index]
-        small_label_colors_light[label] = lighten_color(base_color, 0.9)   # 非常淺
-        small_label_colors_dark[label] = base_color  # 保持原色（中等深度）
+        color_index = (i + offset) % len(scientific_colors)
+        base_color = scientific_colors[color_index]
+        small_label_colors_light[label] = create_scientific_light_color(base_color)
+        small_label_colors_dark[label] = base_color  # 小標籤使用原色
     
     return {
         'big_light': big_label_colors_light,
         'big_dark': big_label_colors_dark, 
         'small_light': small_label_colors_light,
-        'small_dark': small_label_colors_dark
+        'small_dark': small_label_colors_dark,
+        'base_colors': scientific_colors
     }
+
+def get_dynamic_colors_for_selection(selected_big_labels, selected_small_labels):
+    """根據當前選擇動態分配最優科學期刊風格顏色組合"""
+    all_selected = selected_big_labels + selected_small_labels
+    
+    if len(all_selected) <= 1:
+        return color_schemes
+    
+    # 使用科學期刊推薦的顏色間隔策略
+    base_colors = color_schemes['base_colors']
+    num_colors_needed = len(all_selected)
+    
+    if num_colors_needed <= len(base_colors):
+        # 優化的顏色選擇算法 - 確保最大視覺區別
+        if num_colors_needed <= 4:
+            # 對於少量顏色，使用經典的科學期刊四色組合
+            selected_indices = [0, 1, 2, 3]  # 藍、橙、綠、紅
+        elif num_colors_needed <= 8:
+            # 中等數量，使用擴展的經典組合
+            selected_indices = [0, 1, 2, 3, 4, 6, 8, 9]  # 跳過相似顏色
+        else:
+            # 大量顏色，使用均勻分布
+            interval = len(base_colors) // num_colors_needed
+            selected_indices = [(i * interval) % len(base_colors) for i in range(num_colors_needed)]
+        
+        selected_base_colors = [base_colors[i] for i in selected_indices[:num_colors_needed]]
+        
+        # 重新生成顏色映射
+        dynamic_colors = {
+            'big_light': {},
+            'big_dark': {},
+            'small_light': {},
+            'small_dark': {}
+        }
+        
+        def create_light_color(base_color):
+            hex_color = base_color.lstrip('#')
+            r = int(hex_color[0:2], 16)
+            g = int(hex_color[2:4], 16)
+            b = int(hex_color[4:6], 16)
+            
+            lightness_factor = 0.88
+            r = int(r * (1 - lightness_factor) + 255 * lightness_factor)
+            g = int(g * (1 - lightness_factor) + 255 * lightness_factor)
+            b = int(b * (1 - lightness_factor) + 255 * lightness_factor)
+            
+            return f"#{r:02x}{g:02x}{b:02x}"
+        
+        def create_dark_color(base_color):
+            hex_color = base_color.lstrip('#')
+            r = int(hex_color[0:2], 16)
+            g = int(hex_color[2:4], 16)
+            b = int(hex_color[4:6], 16)
+            
+            min_brightness = 45
+            factor = 0.9
+            r = max(int(r * factor), min_brightness)
+            g = max(int(g * factor), min_brightness)
+            b = max(int(b * factor), min_brightness)
+            
+            return f"#{r:02x}{g:02x}{b:02x}"
+        
+        # 為選中的標籤分配最優顏色
+        color_index = 0
+        for label in selected_big_labels:
+            if color_index < len(selected_base_colors):
+                base_color = selected_base_colors[color_index]
+                dynamic_colors['big_light'][label] = create_light_color(base_color)
+                dynamic_colors['big_dark'][label] = create_dark_color(base_color)
+                color_index += 1
+        
+        for label in selected_small_labels:
+            if color_index < len(selected_base_colors):
+                base_color = selected_base_colors[color_index]
+                dynamic_colors['small_light'][label] = create_light_color(base_color)
+                dynamic_colors['small_dark'][label] = base_color
+                color_index += 1
+        
+        return dynamic_colors
+    
+    return color_schemes
 
 color_schemes = generate_enhanced_colors()
 big_label_colors = color_schemes['big_light']      # 用於文本高亮
@@ -487,6 +573,42 @@ app.layout = html.Div([
                 'backgroundColor': '#FFFFFF',
                 'borderRadius': '10px',
                 'boxShadow': '0 2px 4px rgba(0,0,0,0.1)',
+                'minHeight': '400px',
+                'marginBottom': '20px'
+            }),
+            
+            # 主語省略分析區域
+            html.Div([
+                html.H3("主語省略分析", style={
+                    'color': '#34495E',
+                    'borderBottom': '2px solid #9B59B6',
+                    'paddingBottom': '10px',
+                    'marginBottom': '20px'
+                }),
+                html.Div(id="omission-analysis-results"),
+            ], style={
+                'padding': '20px',
+                'backgroundColor': '#FFFFFF',
+                'borderRadius': '10px',
+                'boxShadow': '0 2px 4px rgba(0,0,0,0.1)',
+                'minHeight': '400px',
+                'marginBottom': '20px'
+            }),
+            
+            # 時態分析區域
+            html.Div([
+                html.H3("敘述時態分析", style={
+                    'color': '#34495E',
+                    'borderBottom': '2px solid #E67E22',
+                    'paddingBottom': '10px',
+                    'marginBottom': '20px'
+                }),
+                html.Div(id="anachrony-analysis-results"),
+            ], style={
+                'padding': '20px',
+                'backgroundColor': '#FFFFFF',
+                'borderRadius': '10px',
+                'boxShadow': '0 2px 4px rgba(0,0,0,0.1)',
                 'minHeight': '400px'
             })
         ], style={
@@ -518,8 +640,7 @@ def create_hierarchical_checklist(selected_book):
         return html.P("请先选择书籍", style={'color': '#7F8C8D', 'fontStyle': 'italic'})
     
     # Filter imagery data for the selected book
-    book_imagery = df_imagery[df_imagery['word'].map(lambda x: len(x) > 1)].drop_duplicates(subset=['word', 'big_label', 'small_label'])
-   
+    book_imagery = df_imagery[df_imagery['book'] == selected_book]
     
     # Group by big_label and collect small_labels
     label_hierarchy = {}
@@ -609,18 +730,24 @@ def update_legend_and_highlight_text(selected_book, big_label_values, small_labe
     if not selected_big_labels and not selected_small_labels:
         legend = html.P("请选择意象标签", style={'color': '#7F8C8D', 'fontStyle': 'italic'})
     else:
+        # 使用動態顏色分配
+        dynamic_colors = get_dynamic_colors_for_selection(selected_big_labels, selected_small_labels)
+        
         legend_items = []
         
-        # Show big label colors (使用淺色用於圖例顯示)
+        # Show big label colors (使用動態淺色用於圖例顯示)
         for big_label in selected_big_labels:
+            light_color = dynamic_colors['big_light'].get(big_label, color_schemes['big_light'].get(big_label, '#DDDDDD'))
+            dark_color = dynamic_colors['big_dark'].get(big_label, color_schemes['big_dark'].get(big_label, '#999999'))
+            
             legend_items.append(
                 html.Div([
                     html.Span(style={
                         'display': 'inline-block',
                         'width': '20px',
                         'height': '20px',
-                        'backgroundColor': color_schemes['big_light'][big_label],
-                        'border': f'2px solid {color_schemes["big_dark"][big_label]}',
+                        'backgroundColor': light_color,
+                        'border': f'2px solid {dark_color}',
                         'marginRight': '10px',
                         'verticalAlign': 'middle'
                     }),
@@ -628,16 +755,19 @@ def update_legend_and_highlight_text(selected_book, big_label_values, small_labe
                 ], style={'marginBottom': '8px'})
             )
         
-        # Show small label colors (使用淺色用於圖例顯示)
+        # Show small label colors (使用動態淺色用於圖例顯示)
         for small_label in selected_small_labels:
+            light_color = dynamic_colors['small_light'].get(small_label, color_schemes['small_light'].get(small_label, '#DDDDDD'))
+            dark_color = dynamic_colors['small_dark'].get(small_label, color_schemes['small_dark'].get(small_label, '#999999'))
+            
             legend_items.append(
                 html.Div([
                     html.Span(style={
                         'display': 'inline-block',
                         'width': '20px',
                         'height': '20px',
-                        'backgroundColor': color_schemes['small_light'][small_label],
-                        'border': f'2px solid {color_schemes["small_dark"][small_label]}',
+                        'backgroundColor': light_color,
+                        'border': f'2px solid {dark_color}',
                         'marginRight': '10px',
                         'verticalAlign': 'middle'
                     }),
@@ -663,7 +793,7 @@ def update_legend_and_highlight_text(selected_book, big_label_values, small_labe
         text = row['text']
 
         # Filter imagery data for the selected book first
-        book_imagery = df_imagery[df_imagery['word'].map(lambda x: len(x) > 1)].drop_duplicates(subset=['word', 'big_label', 'small_label'])
+        book_imagery = df_imagery[df_imagery['book'] == selected_book]
         
         # Filter by selected labels (both big and small)
         filtered = book_imagery[
@@ -678,58 +808,64 @@ def update_legend_and_highlight_text(selected_book, big_label_values, small_labe
         highlight_map = {}
         for _, r in filtered.iterrows():
             word = r['word']
-            color = small_label_colors.get(r['small_label'], big_label_colors.get(r['big_label'], "#DDDDDD"))
-            label_info = f"{r['small_label']} ({r['big_label']})" if r['small_label'] in selected_small_labels else r['big_label']
+            # Use small_label color if the small_label is selected, otherwise use big_label color
+            if r['small_label'] in selected_small_labels:
+                color = color_schemes['small_light'][r['small_label']]
+                label_info = f"{r['small_label']} ({r['big_label']})"
+            else:
+                color = color_schemes['big_light'][r['big_label']]
+                label_info = r['big_label']
+            
             if word not in highlight_map:
-                highlight_map[word] = (color, label_info)
+                highlight_map[word] = f"<span style='background-color:{color}; padding:2px 4px; border-radius:3px; border:1px solid #BDC3C7;' title='{label_info}'>{word}</span>"
 
+        def highlight_words(text, highlight_map):
+            for word, span in highlight_map.items():
+                text = text.replace(word, span)
+            return text
 
-        def create_highlighted_elements(text, highlight_map):
-            # Sort by length to avoid partial matches
-            sorted_words = sorted(highlight_map.keys(), key=len, reverse=True)
+        highlighted_text = highlight_words(text, highlight_map)
 
-            # Build pattern to match any of the highlight words
-            pattern = '|'.join(re.escape(word) for word in sorted_words)
-            parts = re.split(f'({pattern})', text)
+        # Enhanced HTML styling
+        html_output = f"""
+        <html>
+        <head>
+            <meta charset="UTF-8">
+            <style>
+                body {{
+                    white-space: pre-wrap;
+                    font-family: 'Microsoft YaHei', SimSun, serif;
+                    line-height: 1.8;
+                    font-size: 16px;
+                    padding: 20px;
+                    color: #2C3E50;
+                    background-color: #FEFEFE;
+                    max-width: 100%;
+                    word-wrap: break-word;
+                }}
+                span {{
+                    transition: all 0.2s ease;
+                }}
+                span:hover {{
+                    transform: scale(1.05);
+                    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+                }}
+            </style>
+        </head>
+        <body>{highlighted_text}</body>
+        </html>
+        """
 
-            # Construct the final output using html.Span
-            elements = []
-            for part in parts:
-                if part in highlight_map:
-                    color, label_info = highlight_map[part]
-                    elements.append(html.Span(
-                        part,
-                        style={
-                            'backgroundColor': color,
-                            'padding': '2px 4px',
-                            'borderRadius': '3px',
-                            'border': '1px solid #BDC3C7',
-                            'cursor': 'pointer'
-                        },
-                        title=label_info
-                    ))
-                else:
-                    elements.append(part)
-            return elements
-
-
-        highlighted_text = create_highlighted_elements(text, highlight_map)
-        text_display = html.Div(highlighted_text, style={
-            'whiteSpace': 'pre-wrap',
-            'fontFamily': "'Microsoft YaHei', SimSun, serif",
-            'lineHeight': '1.8',
-            'fontSize': '16px',
-            'padding': '20px',
-            'color': '#2C3E50',
-            'backgroundColor': '#FEFEFE',
-            'maxWidth': '100%',
-            'wordWrap': 'break-word',
-            'height': '700px',
-            'overflowY': 'scroll',
-            'border': '1px solid #BDC3C7',
-            'borderRadius': '5px'
-        })
-
+        text_display = html.Iframe(
+            srcDoc=html_output,
+            style={
+                'width': '100%', 
+                'height': '700px', 
+                'border': '1px solid #BDC3C7',
+                'borderRadius': '5px'
+            }
+        )
+    
     return legend, text_display
 
 # Debug 回調函數
@@ -840,6 +976,488 @@ def debug_data_structure(n_clicks, selected_book):
         'display': 'block'
     }
 
+# 簡化的時態分析回調函數 - 只保留餅圖、統計摘要和詞彙範例
+@app.callback(
+    Output("anachrony-analysis-results", "children"),
+    Input("book-selector", "value"),
+    prevent_initial_call=True
+)
+def update_anachrony_analysis(selected_book):
+    if not selected_book:
+        return html.Div([
+            html.P("請選擇書籍以查看敘述時態分析。", 
+                  style={
+                      'textAlign': 'center', 
+                      'color': '#7F8C8D',
+                      'fontSize': '16px',
+                      'marginTop': '50px'
+                  })
+        ])
+    
+    # 獲取書籍資料
+    book_data = df_books[df_books['title'] == selected_book]
+    
+    if book_data.empty:
+        return html.Div([
+            html.P("找不到對應的書籍資料。", 
+                  style={
+                      'textAlign': 'center', 
+                      'color': '#E74C3C',
+                      'fontSize': '16px',
+                      'marginTop': '50px'
+                  })
+        ])
+    
+    book_row = book_data.iloc[0]
+    
+    # 檢查是否有時態分析資料
+    if 'anachrony_type' not in book_row or 'anachrony_terms' not in book_row:
+        return html.Div([
+            html.P("該書籍缺少敘述時態分析資料。", 
+                  style={
+                      'textAlign': 'center', 
+                      'color': '#E74C3C',
+                      'fontSize': '16px',
+                      'marginTop': '50px'
+                  })
+        ])
+    
+    anachrony_types = book_row['anachrony_type']
+    anachrony_terms = book_row['anachrony_terms']
+    
+    # 檢查資料格式
+    if not isinstance(anachrony_types, list) or not isinstance(anachrony_terms, list):
+        return html.Div([
+            html.P("敘述時態資料格式錯誤。", 
+                  style={
+                      'textAlign': 'center', 
+                      'color': '#E74C3C',
+                      'fontSize': '16px',
+                      'marginTop': '50px'
+                  })
+        ])
+    
+    if len(anachrony_types) == 0:
+        return html.Div([
+            html.P("該書籍沒有檢測到時態變化。", 
+                  style={
+                      'textAlign': 'center', 
+                      'color': '#7F8C8D',
+                      'fontSize': '16px',
+                      'marginTop': '50px'
+                  })
+        ])
+    
+    # 處理 list of lists 資料
+    def flatten_anachrony_data(data_list):
+        """展平時態資料並統計"""
+        flattened = []
+        sentence_counts = {'追述': 0, '预述': 0, '混合': 0}
+        
+        for i, sentence_data in enumerate(data_list):
+            if isinstance(sentence_data, list):
+                if len(sentence_data) > 1:
+                    # 混合時態
+                    sentence_counts['混合'] += 1
+                    flattened.extend(sentence_data)
+                elif len(sentence_data) == 1:
+                    # 單一時態
+                    tense = sentence_data[0]
+                    sentence_counts[tense] = sentence_counts.get(tense, 0) + 1
+                    flattened.append(tense)
+            elif isinstance(sentence_data, str):
+                # 直接是字符串
+                sentence_counts[sentence_data] = sentence_counts.get(sentence_data, 0) + 1
+                flattened.append(sentence_data)
+                
+        return flattened, sentence_counts
+    
+    # 處理時態類型和詞彙
+    flat_types, sentence_type_counts = flatten_anachrony_data(anachrony_types)
+    flat_terms, _ = flatten_anachrony_data(anachrony_terms)
+    
+    # 統計總體分佈
+    from collections import Counter
+    type_counts = Counter(flat_types)
+    
+    # 準備圖表資料
+    tense_labels = list(type_counts.keys())
+    tense_counts = list(type_counts.values())
+    
+    # 創建時態分佈餅圖
+    colors_map = {
+        '追述': '#E67E22',  # 橘色 - 回望過去
+        '预述': '#3498DB',  # 藍色 - 展望未來  
+        '混合': '#9B59B6'   # 紫色 - 混合時態
+    }
+    
+    fig_pie = go.Figure(data=[go.Pie(
+        labels=tense_labels,
+        values=tense_counts,
+        hole=0.3,
+        marker=dict(colors=[colors_map.get(label, '#95A5A6') for label in tense_labels]),
+        textinfo='label+percent+value',
+        textposition='outside',
+        textfont=dict(size=14)
+    )])
+    
+    fig_pie.update_layout(
+        title=f"《{selected_book}》敘述時態分佈",
+        font=dict(size=14),
+        height=450,
+        margin=dict(t=80, b=60, l=60, r=60),
+        showlegend=True,
+        plot_bgcolor='white',
+        paper_bgcolor='white'
+    )
+    
+    # 統計摘要
+    total_tense_instances = sum(type_counts.values())
+    total_sentences_with_tense = len([t for t in sentence_type_counts.values() if t > 0])
+    total_sentences = len(anachrony_types)
+    tense_coverage = (sum(sentence_type_counts.values()) / total_sentences * 100) if total_sentences > 0 else 0
+    
+    most_common_tense = type_counts.most_common(1)[0] if type_counts else ("無", 0)
+    
+    # 創建統計表格
+    stats_table = []
+    stats_table.append(html.Tr([
+        html.Th("統計項目", style={'border': '1px solid #ddd', 'padding': '12px', 'backgroundColor': '#f8f9fa', 'fontWeight': 'bold'}),
+        html.Th("數值", style={'border': '1px solid #ddd', 'padding': '12px', 'backgroundColor': '#f8f9fa', 'fontWeight': 'bold'})
+    ]))
+    
+    stats_table.append(html.Tr([
+        html.Td("總時態標記數", style={'border': '1px solid #ddd', 'padding': '10px'}),
+        html.Td(f"{total_tense_instances}個", style={'border': '1px solid #ddd', 'padding': '10px', 'fontWeight': 'bold'})
+    ]))
+    
+    stats_table.append(html.Tr([
+        html.Td("含時態變化的句子", style={'border': '1px solid #ddd', 'padding': '10px'}),
+        html.Td(f"{sum(sentence_type_counts.values())}句", style={'border': '1px solid #ddd', 'padding': '10px', 'fontWeight': 'bold'})
+    ]))
+    
+    stats_table.append(html.Tr([
+        html.Td("時態覆蓋率", style={'border': '1px solid #ddd', 'padding': '10px'}),
+        html.Td(f"{tense_coverage:.1f}%", style={'border': '1px solid #ddd', 'padding': '10px', 'fontWeight': 'bold'})
+    ]))
+    
+    stats_table.append(html.Tr([
+        html.Td("最常見時態", style={'border': '1px solid #ddd', 'padding': '10px'}),
+        html.Td(f"「{most_common_tense[0]}」({most_common_tense[1]}次)", 
+               style={'border': '1px solid #ddd', 'padding': '10px', 'fontWeight': 'bold'})
+    ]))
+    
+    # 混合時態句子數
+    mixed_sentences = sentence_type_counts.get('混合', 0)
+    stats_table.append(html.Tr([
+        html.Td("混合時態句子", style={'border': '1px solid #ddd', 'padding': '10px'}),
+        html.Td(f"{mixed_sentences}句", style={'border': '1px solid #ddd', 'padding': '10px', 'fontWeight': 'bold'})
+    ]))
+    
+    # 時態詞彙範例（顯示前10個）
+    term_examples = []
+    shown_terms = []
+    for i, terms_list in enumerate(anachrony_terms[:10]):
+        if isinstance(terms_list, list) and terms_list:
+            for term in terms_list:
+                if term and term not in shown_terms:
+                    shown_terms.append(term)
+                    if len(shown_terms) <= 10:
+                        # 判斷對應的時態類型
+                        tense_type = '未知'
+                        if i < len(anachrony_types):
+                            sentence_tense = anachrony_types[i]
+                            if isinstance(sentence_tense, list) and sentence_tense:
+                                tense_type = '/'.join(sentence_tense)
+                            elif isinstance(sentence_tense, str):
+                                tense_type = sentence_tense
+                        
+                        term_color = colors_map.get(tense_type.split('/')[0], '#95A5A6')
+                        term_examples.append(
+                            html.Div([
+                                html.Span(f"「{term}」", style={
+                                    'fontWeight': 'bold', 
+                                    'color': term_color,
+                                    'marginRight': '10px',
+                                    'fontSize': '16px'
+                                }),
+                                html.Span(f"({tense_type})", style={
+                                    'color': '#6c757d',
+                                    'fontSize': '14px'
+                                })
+                            ], style={
+                                'marginBottom': '10px', 
+                                'padding': '8px 12px', 
+                                'backgroundColor': '#f8f9fa', 
+                                'borderRadius': '6px',
+                                'border': f'1px solid {term_color}',
+                                'display': 'inline-block',
+                                'marginRight': '10px'
+                            })
+                        )
+    
+    return html.Div([
+        # 餅圖和統計摘要並排 - 左餅右表
+        html.Div([
+            # 左側：餅圖
+            html.Div([
+                dcc.Graph(figure=fig_pie)
+            ], style={
+                'width': '55%', 
+                'display': 'inline-block', 
+                'verticalAlign': 'top'
+            }),
+            
+            # 右側：統計摘要和詞彙範例
+            html.Div([
+                html.H4("📊 統計摘要", style={
+                    'color': '#34495E', 
+                    'marginBottom': '15px'
+                }),
+                html.Table(stats_table, style={
+                    'width': '100%', 
+                    'borderCollapse': 'collapse',
+                    'marginBottom': '25px'
+                }),
+                
+                # 時態詞彙範例
+                html.H4("🎯 時態詞彙範例", style={
+                    'color': '#34495E', 
+                    'marginBottom': '15px'
+                }),
+                html.Div(term_examples, style={
+                    'lineHeight': '1.6'
+                }),
+                html.P(f"以上顯示前 10 個時態標記詞彙範例", 
+                      style={
+                          'color': '#6c757d', 
+                          'fontStyle': 'italic', 
+                          'marginTop': '15px',
+                          'fontSize': '12px'
+                      })
+            ], style={
+                'width': '45%', 
+                'display': 'inline-block', 
+                'verticalAlign': 'top',
+                'paddingLeft': '20px'
+            })
+        ])
+    ])
+
+# 簡化的主語省略分析回調函數 - 只保留餅圖和統計摘要
+@app.callback(
+    Output("omission-analysis-results", "children"),
+    Input("book-selector", "value"),
+    prevent_initial_call=True
+)
+def update_omission_analysis(selected_book):
+    if not selected_book:
+        return html.Div([
+            html.P("請選擇書籍以查看主語省略分析。", 
+                  style={
+                      'textAlign': 'center', 
+                      'color': '#7F8C8D',
+                      'fontSize': '16px',
+                      'marginTop': '50px'
+                  })
+        ])
+    
+    # 獲取書籍資料
+    book_data = df_books[df_books['title'] == selected_book]
+    
+    if book_data.empty:
+        return html.Div([
+            html.P("找不到對應的書籍資料。", 
+                  style={
+                      'textAlign': 'center', 
+                      'color': '#E74C3C',
+                      'fontSize': '16px',
+                      'marginTop': '50px'
+                  })
+        ])
+    
+    book_row = book_data.iloc[0]
+    
+    # 檢查是否有主語省略資料
+    if 'omitted_subjects' not in book_row or 'omission_sentences' not in book_row:
+        return html.Div([
+            html.P("該書籍缺少主語省略分析資料。", 
+                  style={
+                      'textAlign': 'center', 
+                      'color': '#E74C3C',
+                      'fontSize': '16px',
+                      'marginTop': '50px'
+                  })
+        ])
+    
+    omitted_subjects = book_row['omitted_subjects']
+    omission_sentences = book_row['omission_sentences']
+    
+    # 檢查資料格式
+    if not isinstance(omitted_subjects, list) or not isinstance(omission_sentences, list):
+        return html.Div([
+            html.P("主語省略資料格式錯誤。", 
+                  style={
+                      'textAlign': 'center', 
+                      'color': '#E74C3C',
+                      'fontSize': '16px',
+                      'marginTop': '50px'
+                  })
+        ])
+    
+    if len(omitted_subjects) == 0:
+        return html.Div([
+            html.P("該書籍沒有主語省略現象。", 
+                  style={
+                      'textAlign': 'center', 
+                      'color': '#7F8C8D',
+                      'fontSize': '16px',
+                      'marginTop': '50px'
+                  })
+        ])
+    
+    # 統計主語分佈
+    from collections import Counter
+    subject_counts = Counter(omitted_subjects)
+    
+    # 只顯示前10名主語，其餘歸為"其他"
+    top_subjects = subject_counts.most_common(10)
+    other_count = sum(count for subject, count in subject_counts.items() 
+                     if subject not in [s[0] for s in top_subjects])
+    
+    # 準備餅圖資料
+    pie_labels = [subject for subject, count in top_subjects]
+    pie_values = [count for subject, count in top_subjects]
+    
+    if other_count > 0:
+        pie_labels.append("其他")
+        pie_values.append(other_count)
+    
+    # 創建餅圖 - 只顯示比例>2%的標籤
+    total_pie_count = sum(pie_values)
+    pie_text = []
+    
+    for i, (label, value) in enumerate(zip(pie_labels, pie_values)):
+        percentage = (value / total_pie_count) * 100
+        if percentage >= 2.0:  # 只顯示占比>=2%的標籤
+            pie_text.append(f"{label}<br>{percentage:.1f}%")
+        else:
+            pie_text.append('')
+    
+    fig_pie = go.Figure(data=[go.Pie(
+        labels=pie_labels,
+        values=pie_values,
+        hole=0.3,
+        text=pie_text,
+        textinfo='text',
+        textposition='outside',
+        textfont=dict(size=14),
+        marker=dict(
+            colors=['#9B59B6', '#3498DB', '#E74C3C', '#F39C12', '#27AE60', 
+                   '#E67E22', '#1ABC9C', '#34495E', '#F1C40F', '#95A5A6', '#BDC3C7'][:len(pie_labels)]
+        ),
+        showlegend=True
+    )])
+    
+    fig_pie.update_layout(
+        title=f"《{selected_book}》省略主語分佈（前10名）",
+        font=dict(size=14),
+        height=450,
+        margin=dict(t=80, b=60, l=60, r=120),
+        legend=dict(
+            orientation="v", 
+            yanchor="middle", 
+            y=0.5, 
+            xanchor="left", 
+            x=1.01,
+            font=dict(size=12)
+        ),
+        plot_bgcolor='white',
+        paper_bgcolor='white'
+    )
+    
+    # 統計摘要
+    total_omissions = len(omitted_subjects)
+    unique_subjects = len(subject_counts)
+    most_common_subject = subject_counts.most_common(1)[0] if subject_counts else ("無", 0)
+    
+    # 顯示前10名的統計資訊
+    top_10_count = sum(count for subject, count in top_subjects)
+    coverage_percentage = (top_10_count / total_omissions * 100) if total_omissions > 0 else 0
+    
+    # 計算省略率（如果有總句子數的話）
+    total_sentences = book_row.get('total_sentences', len(book_row.get('text_chunk_smallest', [])))
+    omission_rate = (len(omission_sentences) / total_sentences * 100) if total_sentences > 0 else 0
+    
+    # 創建統計表格
+    stats_table = []
+    stats_table.append(html.Tr([
+        html.Th("統計項目", style={'border': '1px solid #ddd', 'padding': '12px', 'backgroundColor': '#f8f9fa', 'fontWeight': 'bold'}),
+        html.Th("數值", style={'border': '1px solid #ddd', 'padding': '12px', 'backgroundColor': '#f8f9fa', 'fontWeight': 'bold'})
+    ]))
+    
+    stats_table.append(html.Tr([
+        html.Td("總主語省略次數", style={'border': '1px solid #ddd', 'padding': '10px'}),
+        html.Td(f"{total_omissions}次", style={'border': '1px solid #ddd', 'padding': '10px', 'fontWeight': 'bold'})
+    ]))
+    
+    stats_table.append(html.Tr([
+        html.Td("含省略的句子數", style={'border': '1px solid #ddd', 'padding': '10px'}),
+        html.Td(f"{len(omission_sentences)}句", style={'border': '1px solid #ddd', 'padding': '10px', 'fontWeight': 'bold'})
+    ]))
+    
+    stats_table.append(html.Tr([
+        html.Td("省略句子比例", style={'border': '1px solid #ddd', 'padding': '10px'}),
+        html.Td(f"{omission_rate:.1f}%", style={'border': '1px solid #ddd', 'padding': '10px', 'fontWeight': 'bold'})
+    ]))
+    
+    stats_table.append(html.Tr([
+        html.Td("不同主語類型數", style={'border': '1px solid #ddd', 'padding': '10px'}),
+        html.Td(f"{unique_subjects}種", style={'border': '1px solid #ddd', 'padding': '10px', 'fontWeight': 'bold'})
+    ]))
+    
+    stats_table.append(html.Tr([
+        html.Td("最常省略的主語", style={'border': '1px solid #ddd', 'padding': '10px'}),
+        html.Td(f"「{most_common_subject[0]}」({most_common_subject[1]}次)", 
+               style={'border': '1px solid #ddd', 'padding': '10px', 'fontWeight': 'bold'})
+    ]))
+    
+    stats_table.append(html.Tr([
+        html.Td("前10名覆蓋率", style={'border': '1px solid #ddd', 'padding': '10px'}),
+        html.Td(f"{coverage_percentage:.1f}%", style={'border': '1px solid #ddd', 'padding': '10px', 'fontWeight': 'bold'})
+    ]))
+    
+    return html.Div([
+        # 餅圖和統計摘要並排 - 左餅右表
+        html.Div([
+            # 左側：餅圖
+            html.Div([
+                dcc.Graph(figure=fig_pie)
+            ], style={
+                'width': '55%', 
+                'display': 'inline-block', 
+                'verticalAlign': 'top'
+            }),
+            
+            # 右側：統計摘要
+            html.Div([
+                html.H4("📊 統計摘要", style={
+                    'color': '#34495E', 
+                    'marginBottom': '15px'
+                }),
+                html.Table(stats_table, style={
+                    'width': '100%', 
+                    'borderCollapse': 'collapse'
+                })
+            ], style={
+                'width': '45%', 
+                'display': 'inline-block', 
+                'verticalAlign': 'top',
+                'paddingLeft': '20px'
+            })
+        ])
+    ])
+
 # 動態分析回調函數
 @app.callback(
     Output("ethnic-analysis-results", "children"),
@@ -906,12 +1524,17 @@ def update_dynamic_analysis(n_clicks, selected_book, window_size, big_label_valu
     all_labels = list(label_words.keys())
     
     # 為每個標籤分配顏色（圖表使用深色變體）
+    # 使用動態顏色分配確保高對比
+    dynamic_colors = get_dynamic_colors_for_selection(selected_big_labels, selected_small_labels)
+    
     label_color_mapping = {}
     for label in all_labels:
         if label in selected_big_labels:
-            label_color_mapping[label] = color_schemes['big_dark'][label]
+            label_color_mapping[label] = dynamic_colors['big_dark'].get(label, 
+                                       color_schemes['big_dark'].get(label, '#666666'))
         elif label in selected_small_labels:
-            label_color_mapping[label] = color_schemes['small_dark'][label]
+            label_color_mapping[label] = dynamic_colors['small_dark'].get(label, 
+                                       color_schemes['small_dark'].get(label, '#666666'))
         else:
             # 備用顏色（深色）
             colors = ['#D32F2F', '#388E3C', '#1976D2', '#689F38', '#F57C00', '#7B1FA2']
@@ -1025,7 +1648,9 @@ def update_dynamic_analysis(n_clicks, selected_book, window_size, big_label_valu
             word_display.append(
                 html.Div([
                     html.H5(f"{label}相關詞彙：", 
-                           style={'color': color_schemes['big_dark'][label] if label in selected_big_labels else color_schemes['small_dark'][label], 'marginTop': '15px'}),
+                           style={'color': dynamic_colors['big_dark'].get(label, color_schemes['big_dark'].get(label, '#666666')) if label in selected_big_labels else 
+                                           dynamic_colors['small_dark'].get(label, color_schemes['small_dark'].get(label, '#666666')), 
+                                  'marginTop': '15px'}),
                     html.P(f"{', '.join(label_words[label][:10])}" + 
                           (f"... (共{len(label_words[label])}個)" if len(label_words[label]) > 10 else ""),
                           style={'fontSize': '14px', 'color': '#34495E', 'marginLeft': '10px'})
