@@ -6,6 +6,7 @@ import pandas as pd
 from collections import Counter
 from tqdm import tqdm
 import chinese_converter
+import re
 
 
 def post(messages: list) -> list:
@@ -34,7 +35,7 @@ def post(messages: list) -> list:
 
 def detect_imageries(text) -> dict:
 
-    text_chunks = [text[i:i+200] for i in range(0, len(text), 200)]
+    text_chunks = [text[i:i+200] for i in range(0, len(text), 500)]
 
     answer_list = []
 
@@ -44,9 +45,16 @@ def detect_imageries(text) -> dict:
             answer = post(messages)
             print(answer)
             try:
-                answer = ast.literal_eval(answer)
-                answer_list += answer
-                break
+                if answer.startswith("```json"):
+                    match = re.search(r"```json(.*?)```", answer, re.DOTALL)
+                    json_part = match.group(1).strip()
+                    answer = ast.literal_eval(json_part)
+                    answer_list += answer
+                    break
+                elif answer.startswith("[") and answer.endswith("]"):
+                    answer = ast.literal_eval(answer)
+                    answer_list += answer
+                    break
                 # answer_str += answer
             except:
                 print("Error in parsing the answer. Retrying...")
@@ -66,7 +74,7 @@ for i, row in df_zhutianxing.iterrows():
     text_chunk = row['text_chunk_smallest']
     text_chunk = "".join([sent for sent in text_chunk])
     # print(text_chunk)
-    img_count = detect_imageries(chinese_converter.to_traditional(text_chunk))
+    img_count = detect_imageries(text_chunk)
     print(f"Processing {row['title']}")
     with open(f"./omission/{row['title']}.json", "w", encoding="utf-8") as f:
         json.dump(img_count, f, ensure_ascii=False, indent=4)
