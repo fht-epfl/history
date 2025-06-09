@@ -289,6 +289,34 @@ class CooccurrenceGraphVisualizer:
     
     def setup_callbacks(self):
         """Setup Dash callbacks"""
+        # Callback for button functionality
+        @self.app.callback(
+            Output('label-selector', 'value'),
+            [Input('select-all-btn', 'n_clicks'),
+             Input('clear-all-btn', 'n_clicks'),
+             Input('top-10-btn', 'n_clicks')],
+            prevent_initial_call=True
+        )
+        def update_label_selection(select_all_clicks, clear_all_clicks, top_10_clicks):
+            ctx = dash.callback_context
+            if not ctx.triggered:
+                return dash.no_update
+            
+            button_id = ctx.triggered[0]['prop_id'].split('.')[0]
+            all_labels = sorted(list(self.label_sentence_count.keys()))
+            
+            if button_id == 'select-all-btn':
+                return all_labels
+            elif button_id == 'clear-all-btn':
+                return []
+            elif button_id == 'top-10-btn':
+                # Get top 10 labels by frequency
+                top_labels = sorted(self.label_sentence_count.items(), 
+                                  key=lambda x: x[1], reverse=True)[:10]
+                return [label for label, count in top_labels]
+            
+            return dash.no_update
+        
         @self.app.callback(
             [Output('cooccurrence-graph', 'figure'),
              Output('graph-stats', 'children')],
@@ -336,7 +364,7 @@ class CooccurrenceGraphVisualizer:
     
     def run(self, debug=True, port=8052):
         """Run the Dash app"""
-        self.app.run(debug=debug, port=port)
+        self.app.run("0.0.0.0", port=port, debug=debug, use_reloader=False)
 
 # Example usage with your data
 if __name__ == "__main__":
@@ -357,7 +385,7 @@ if __name__ == "__main__":
     )
     
     print("Starting the co-occurrence graph visualizer...")
-    print("Open http://localhost:8051 in your browser to view the interactive graph")
+    print("Open http://localhost:8052 in your browser to view the interactive graph")
     
     # To use with your actual data, replace the example data above with:
     # visualizer = CooccurrenceGraphVisualizer(label_sentence_count, label_cooccurrence_graph)
